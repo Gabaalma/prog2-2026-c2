@@ -73,18 +73,23 @@ def main(
     def dump_query() -> None:
         input_df = pd.read_csv(in_p)
         noise_scale = input_df[["x", "y"]].std().mean() * 2
-        queries: list[dict] = []
+
+        genre_subsets = {g: input_df[input_df[g]] for g in GENRE_COLS}
+        valid_genres = [g for g, subset in genre_subsets.items() if not subset.empty]
+
+        queries = []
         while len(queries) < q_n:
-            genre = str(rng.choice(GENRE_COLS))
-            genre_subset = input_df[input_df[genre]]
-            if genre_subset.empty:
-                continue
+            genre = rng.choice(valid_genres)
+            genre_subset = genre_subsets[genre]
             anchor = genre_subset.sample(1, random_state=rng).iloc[0]
             min_year = int(anchor["year"]) - int(rng.randint(1, 30))
             max_year = int(anchor["year"]) + int(rng.randint(1, 30))
-            subset = genre_subset[
-                (genre_subset["year"] >= min_year) & (genre_subset["year"] <= max_year)
-            ]
+
+            year_mask = (genre_subset["year"] >= min_year) & (
+                genre_subset["year"] <= max_year
+            )
+            subset = genre_subset[year_mask]
+
             if subset.empty:
                 continue
             point = subset[["x", "y"]].sample(1, random_state=rng).iloc[0]
@@ -97,6 +102,7 @@ def main(
                     "y": float(point["y"]) + rng.normal(0, noise_scale),
                 }
             )
+
         pd.DataFrame(queries).to_csv(q_p, index=False)
 
     logs = [f"inputs: {in_n}", f"queries: {q_n}"]
