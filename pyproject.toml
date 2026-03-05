@@ -5,5 +5,7 @@ description = "Challenge 2"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+	"numpy",
 	"pandas",
+	"tabulate",
 ]
